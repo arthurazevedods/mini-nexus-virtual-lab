@@ -16,3 +16,17 @@ def list_spaces(request):
         for space in spaces
     ]
     return JsonResponse({"spaces": data})
+    
+def space_detail(request, slug):
+    try:
+        space = Space.objects.get(slug=slug)
+    except Space.DoesNotExist:
+        raise Http404("Space not found")
+
+    data = {
+        "id": space.id,
+        "name": space.name,
+        "slug": space.slug,
+        "description": space.description,
+    }
+    return JsonResponse(data)
