@@ -1,6 +1,7 @@
 // @mini-nexus-virtual-lab/client/src/pages/LobbyPage.tsx
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 type Space = {
   id: number;
@@ -37,10 +38,18 @@ export function LobbyPage() {
   }
 
   const spaces = data ?? [];
+  const { data: currentUser } = useCurrentUser();
 
   return (
     <div style={{ padding: "2rem" }}>
       <h1>Lobby – Mini Nexus Virtual Lab</h1>
+      {currentUser ? (
+        <p>Logado como: <strong>{currentUser.username}</strong></p>
+      ) : (
+        <p>
+          Você não está logado. <Link to="/login">Fazer login</Link>
+        </p>
+      )}
       <p>Escolha um espaço para entrar:</p>
 
       {spaces.length === 0 && <p>Nenhum espaço disponível.</p>}

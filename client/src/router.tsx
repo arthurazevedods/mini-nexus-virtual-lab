@@ -1,4 +1,3 @@
-// @mini-nexus-virtual-lab/client/src/router.tsx
 import {
   Outlet,
   createRootRoute,
@@ -8,6 +7,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { LobbyPage } from "./pages/LobbyPage";
 import { SpacePage } from "./pages/SpacePage";
+import { LoginPage } from "./pages/LoginPage"; // <- novo
 
 function RootLayout() {
   return (
@@ -28,13 +28,23 @@ const lobbyRoute = createRoute({
   component: LobbyPage,
 });
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/login",
+  component: LoginPage,
+});
+
 const spaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/space/$slug",
   component: SpacePage,
 });
 
-const routeTree = rootRoute.addChildren([lobbyRoute, spaceRoute]);
+const routeTree = rootRoute.addChildren([
+  lobbyRoute,
+  loginRoute,
+  spaceRoute,
+]);
 
 export const router = createRouter({
   routeTree,

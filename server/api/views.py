@@ -1,5 +1,14 @@
 from django.http import JsonResponse
 from .models import Space
+import json
+from django.http import JsonResponse, Http404
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
+from .models import Space
+
 
 def ping(request):
     return JsonResponse({"message": "Nexus Virtual Lab Django server is running 🚀"})
@@ -30,3 +39,61 @@ def space_detail(request, slug):
         "description": space.description,
     }
     return JsonResponse(data)
+
+@ensure_csrf_cookie
+def csrf(request):
+    """
+    Endpoint para garantir que o cookie de CSRF seja definido.
+    Não precisa ser chamado manualmente pelo usuário; o front usa antes de POST.
+    """
+    # Apenas força o get_token para gerar o cookie
+    get_token(request)
+    return JsonResponse({"detail": "CSRF cookie set"})
+
+
+@require_http_methods(["POST"])
+@csrf_protect
+def login_view(request):
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    username = data.get("username")
+    password = data.get("password")
+
+    if not username or not password:
+        return JsonResponse({"error": "Username and password are required"}, status=400)
+
+    user = authenticate(request, username=username, password=password)
+    if user is None:
+        return JsonResponse({"error": "Invalid credentials"}, status=400)
+
+    login(request, user)
+    return JsonResponse({"id": user.id, "username": user.username})
+
+
+@require_http_methods(["POST"])
+def logout_view(request):
+    logout(request)
+    return JsonResponse({"detail": "Logged out"})
+
+
+
+
+
+def me_view(request):
+    user = request.user
+    if not user.is_authenticated:
+        return JsonResponse(
+            {"detail": "Authentication credentials were not provided."},
+            status=401,
+        )
+
+    return JsonResponse(
+        {
+            "id": user.id,
+            "username": user.username,
+        }
+    )
+
