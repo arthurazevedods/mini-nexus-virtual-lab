@@ -1,6 +1,6 @@
-// @mini-nexus-virtual-lab/client/src/lib/authClient.ts
 
-const API_BASE = "http://127.0.0.1:8000/api";
+
+const API_BASE = "http://localhost:8000/api";
 
 function getCookie(name: string): string | null {
   const value = document.cookie
@@ -28,7 +28,7 @@ export async function loginRequest(username: string, password: string) {
 
   const res = await fetch(`${API_BASE}/auth/login/`, {
     method: "POST",
-    credentials: "include", // MUITO importante para enviar/receber cookies
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       "X-CSRFToken": csrfToken,
@@ -36,12 +36,13 @@ export async function loginRequest(username: string, password: string) {
     body: JSON.stringify({ username, password }),
   });
 
+  const data = await res.json().catch(() => ({}));
+
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
     throw new Error(data.error || "Erro ao fazer login");
   }
 
-  return res.json();
+  return data;
 }
 
 export async function logoutRequest() {

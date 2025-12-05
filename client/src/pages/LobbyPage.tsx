@@ -1,4 +1,3 @@
-// @mini-nexus-virtual-lab/client/src/pages/LobbyPage.tsx
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -11,7 +10,9 @@ type Space = {
 };
 
 async function fetchSpaces(): Promise<Space[]> {
-  const res = await fetch("http://127.0.0.1:8000/api/spaces/");
+  const res = await fetch("http://localhost:8000/api/spaces/", {
+    credentials: "include",
+  });
   if (!res.ok) {
     throw new Error("Erro ao buscar espaços");
   }
@@ -20,37 +21,78 @@ async function fetchSpaces(): Promise<Space[]> {
 }
 
 export function LobbyPage() {
-  const { data, isLoading, isError, error } = useQuery({
+  // 🔹 Hook 1: usuário atual (sempre chamado)
+  const {
+    data: currentUser,
+    isLoading: isLoadingUser,
+    isError: isUserError,
+  } = useCurrentUser();
+
+  // 🔹 Hook 2: lista de espaços (sempre chamado)
+  const {
+    data: spacesData,
+    isLoading: isLoadingSpaces,
+    isError: isSpacesError,
+    error: spacesError,
+  } = useQuery<Space[]>({
     queryKey: ["spaces"],
     queryFn: fetchSpaces,
   });
 
-  if (isLoading) {
-    return <div style={{ padding: "2rem" }}>Carregando espaços...</div>;
-  }
+  const spaces = spacesData ?? [];
 
-  if (isError) {
+  // 🔹 Só depois dos hooks vêm os `if` de estado
+
+  if (isLoadingUser || isLoadingSpaces) {
     return (
-      <div style={{ padding: "2rem", color: "red" }}>
-        Erro ao carregar espaços: {(error as Error).message}
+      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+        <p>Carregando dados...</p>
       </div>
     );
   }
 
-  const spaces = data ?? [];
-  const { data: currentUser } = useCurrentUser();
+  if (isUserError) {
+    // Se der erro no /auth/me, tratamos como "não logado", mas não quebramos a tela
+    console.error("Erro ao carregar usuário atual");
+  }
+
+  if (isSpacesError) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
+        <h1>Lobby – Mini Nexus Virtual Lab</h1>
+        {currentUser ? (
+          <p>
+            Logado como: <strong>{currentUser.username}</strong>
+          </p>
+        ) : (
+          <p>
+            Você não está logado. <Link to="/login">Fazer login</Link>
+          </p>
+        )}
+        <p style={{ color: "red", marginTop: "1rem" }}>
+          Erro ao carregar espaços:{" "}
+          {spacesError instanceof Error ? spacesError.message : "Erro desconhecido"}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
       <h1>Lobby – Mini Nexus Virtual Lab</h1>
+
       {currentUser ? (
-        <p>Logado como: <strong>{currentUser.username}</strong></p>
+        <p>
+          Logado como: <strong>{currentUser.username}</strong>{" "}
+          (<Link to="/login">trocar usuário</Link>)
+        </p>
       ) : (
         <p>
           Você não está logado. <Link to="/login">Fazer login</Link>
         </p>
       )}
-      <p>Escolha um espaço para entrar:</p>
+
+      <p style={{ marginTop: "1rem" }}>Escolha um espaço para entrar:</p>
 
       {spaces.length === 0 && <p>Nenhum espaço disponível.</p>}
 
